@@ -1,0 +1,48 @@
+code_name: 'Psi4'
+docker:
+  image_name: 'mdi/psi4'
+
+  build_image:
+    - apt-get update
+    - apt-get install -y git cmake libblas-dev liblapack-dev libmpfr-dev libboost-all-dev libeigen3-dev
+    - pip install numpy
+    - pip install pymdi
+    - export NUM_CPU_CORES=`grep -c ^processor /proc/cpuinfo`
+
+    # Build libxc
+    - git clone --branch 5.1.2 https://gitlab.com/libxc/libxc.git
+    - cd libxc
+    - cmake -H. -Bobjdir -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=OFF -DDISABLE_KXC=OFF
+    - cd objdir && make -j $NUM_CPU_CORES
+    - make install
+    - cd ..
+    - rm -rf libxc
+
+    # Docker sometimes has out-of-memory errors when running this build in parallel
+    # This forces it to build in serial
+    #- sed -i 's/mp.cpu_count()/1/g' setup.py
+    #- python setup.py install
+
+  build_engine:
+    - |
+      if [ ! -d "build/psi4" ]; then
+        git clone https://github.com/psi4/psi4.git build/psi4
+      fi
+    - export NUM_CPU_CORES=`grep -c ^processor /proc/cpuinfo`
+    - cd build/psi4
+    - |
+      if [ ! -d "objdir" ]; then
+        cmake -S. -Bobjdir -DCMAKE_INSIST_FIND_PACKAGE_Libxc=ON
+      fi
+    - cd objdir
+    - make -j $NUM_CPU_CORES
+
+  validate_engine:
+    - echo "Insert code that will confirm that your code has been built successfully"
+    - exit 1
+
+engine_tests:
+  # Provide at least one example input that can be used to test your code's MDI functionality
+  - script:
+      - echo "Insert commands to run an example calculation here"
+      - exit 1
