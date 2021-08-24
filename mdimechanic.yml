@@ -31,5 +31,5 @@ docker:
 engine_tests:
   # Provide at least one example input that can be used to test your code's MDI functionality
   script:
-    - echo "Insert commands to run an example calculation here"
-    - exit 1
+    - cd tests/embed
+    - ../../build/psi4/objdir/stage/bin/psi4 --mdi "${MDI_OPTIONS}" input.dat output.dat
