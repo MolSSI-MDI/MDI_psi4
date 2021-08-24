@@ -8,21 +8,7 @@ docker:
     - pip install numpy
     - pip install pymdi
     - pip install pydantic
-    #- export NUM_CPU_CORES=`grep -c ^processor /proc/cpuinfo`
-
-    # Build libxc
-    #- git clone --branch 5.1.2 https://gitlab.com/libxc/libxc.git
-    #- cd libxc
-    #- cmake -H. -Bobjdir -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=OFF -DDISABLE_KXC=OFF
-    #- cd objdir && make -j $NUM_CPU_CORES
-    #- make install
-    #- cd ..
-    #- rm -rf libxc
-
-    # Docker sometimes has out-of-memory errors when running this build in parallel
-    # This forces it to build in serial
-    #- sed -i 's/mp.cpu_count()/1/g' setup.py
-    #- python setup.py install
+    - pip install Pint
 
   build_engine:
     - |
@@ -35,17 +21,15 @@ docker:
       if [ ! -d "objdir" ]; then
         cmake -S. -Bobjdir
       fi
-    #- cmake -S. -Bobjdir -DCMAKE_INSIST_FIND_PACKAGE_Libxc=ON
     - cd objdir
     - make -j $NUM_CPU_CORES
 
   validate_engine:
-    - echo "Insert code that will confirm that your code has been built successfully"
     - cd tests/water
     - ../../build/psi4/objdir/stage/bin/psi4 input.dat output.dat
 
 engine_tests:
   # Provide at least one example input that can be used to test your code's MDI functionality
-  - script:
-      - echo "Insert commands to run an example calculation here"
-      - exit 1
+  script:
+    - echo "Insert commands to run an example calculation here"
+    - exit 1
