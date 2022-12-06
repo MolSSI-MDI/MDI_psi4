@@ -22,7 +22,8 @@ docker:
         cmake -S. -Bobjdir
       fi
     - cd objdir
-    - make -j $NUM_CPU_CORES
+    #- make -j $NUM_CPU_CORES
+    - make -j 1
 
   validate_engine:
     - cd tests/water
