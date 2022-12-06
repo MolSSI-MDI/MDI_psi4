@@ -9,6 +9,7 @@ docker:
     - pip install pymdi
     - pip install pydantic
     - pip install Pint
+    - pip install scipy
 
   build_engine:
     - |
