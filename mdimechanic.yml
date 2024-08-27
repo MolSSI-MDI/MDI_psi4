@@ -4,7 +4,9 @@ docker:
 
   build_image:
     - apt-get update
-    - apt-get install -y git cmake libblas-dev liblapack-dev libmpfr-dev libboost-all-dev libeigen3-dev
+    #- apt-get install -y git cmake libblas-dev liblapack-dev libmpfr-dev libboost-all-dev
+    - apt-get install -y git cmake liblapack-dev libeigen3-dev
+    #- apt-get install -y libeigen3-dev
     - pip install numpy
     - pip install pymdi
     - pip install pydantic
@@ -14,7 +16,9 @@ docker:
   build_engine:
     - |
       if [ ! -d "build/psi4" ]; then
-        git clone https://github.com/psi4/psi4.git build/psi4
+        git clone https://github.com/taylor-a-barnes/psi4.git --branch mdi build/psi4
+        git remote add upstream https://github.com/psi4/psi4.git
+        git fetch upstream "refs/tags/*:refs/tags/*"
       fi
     - export NUM_CPU_CORES=`grep -c ^processor /proc/cpuinfo`
     - cd build/psi4
@@ -35,3 +39,50 @@ engine_tests:
   script:
     - cd tests/embed
     - ../../build/psi4/objdir/stage/bin/psi4 --mdi "${MDI_OPTIONS}" input.dat output.dat
+
+
+
+run_scripts:
+
+  test:
+    containers:
+      container1:
+        image: 'mdi/psi4'
+        script:
+          - cd /repo/tests/embed
+          - ../../build/psi4/objdir/stage/bin/psi4 --mdi "-role ENGINE -name Psi -method TCP -port 8021 -hostname localhost" input.dat output.dat &
+          - cd /repo/tests/drivers
+          - python mytest.py
+
+  plugin:
+    containers:
+      container1:
+        image: 'mdi/psi4'
+        script:
+          - cd /repo/build/psi4/objdir
+          - make install
+
+          - pip uninstall pymdi -y
+          - |
+            if [ ! -d "/repo/build/MDI_Library" ]; then
+              git clone https://github.com/MolSSI-MDI/MDI_Library.git --branch import /repo/build/MDI_Library
+            fi
+          - cd /repo/build/MDI_Library
+          - mkdir -p build
+          - cd build
+          - cmake -Dpython_package=ON -Dlanguage=Python ..
+          - make -j 1
+          - make install
+          - cd ..
+          - mkdir -p build2
+          - cd build2
+          - cmake -Dtest_codes=ON ..
+          - make -j 1
+          
+          #- python -c "import mdi; print(mdi.MDI_PATCH_VERSION)"
+        
+          #- cd /repo/tests/drivers
+          #- python driver_plug_py.py -mdi "-role DRIVER -name driver -method LINK -plugin_path /repo" -driver_nranks 0 -plugin_nranks 1 -plugin_name engine_py
+          - ./driver_plug_cxx -mdi "-role DRIVER -name driver -method LINK -plugin_path /repo" -driver_nranks 0 -plugin_nranks 1 -plugin_name psi4
+
+
